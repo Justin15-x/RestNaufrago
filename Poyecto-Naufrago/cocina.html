@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🍽️ Cocina - Órdenes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    header {
+      background: #ff6b35;
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      font-size: 2em;
+    }
+    .btn-volver {
+      background: white;
+      color: #ff6b35;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-volver:hover {
+      background: #f0f0f0;
+    }
+    #ordenes-cocina {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .orden-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 5px solid #ff6b35;
+    }
+    .orden-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #eee;
+    }
+    .mesa-numero {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #ff6b35;
+    }
+    .orden-items {
+      list-style: none;
+    }
+    .orden-items li {
+      padding: 10px 0;
+      border-bottom: 1px dashed #ddd;
+      font-size: 1.1em;
+    }
+    .cantidad {
+      display: inline-block;
+      background: #ff6b35;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .vacio {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+      font-size: 1.5em;
+      grid-column: 1 / -1;
+    }
+    .tiempo {
+      color: #666;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🍽️ COCINA - ÓRDENES ACTIVAS</h1>
+    <a href="interno.html" class="btn-volver">← Volver a Mesas</a>
+  </header>
+  
+  <div id="ordenes-cocina"></div>
+
+  <script>
+    // MATRIZ DE PRODUCTOS
+    const productos = {
+      comida: [
+    { name: "Taco pulpo", price: 59.00 },
+    { name: "Taco Naufrago", price: 65.00 },
+    { name: "Quesadillas", price: 40.00 },
+    { name: "Hamburguesa", price: 85.00 },
+  ],
+  bebidas: [
+    { name: "Coca Cola", price: 25.00 },
+    { name: "Agua Natural", price: 15.00 },
+    { name: "Naranjada", price: 30.00 },
+    { name: "Té Helado", price: 25.00 },
+    { name: "Limonada", price: 22.00 },
+    { name: "Cerveza", price: 35.00 },
+    { name: "Agua de Horchata", price: 20.00 },
+    { name: "Smoothie", price: 45.00 },
+  ]
+    };
+
+    const contenedor = document.getElementById("ordenes-cocina");
+
+    function cargarMesas() {
+      const mesasGuardadas = localStorage.getItem("mesas");
+      if (mesasGuardadas) {
+        return JSON.parse(mesasGuardadas);
+      }
+      return [
+        { id: 1, orders: [] },
+        { id: 2, orders: [] },
+        { id: 3, orders: [] },
+        { id: 4, orders: [] }
+      ];
+    }
+
+    function renderOrdenesCocina() {
+      const mesas = cargarMesas();
+      contenedor.innerHTML = "";
+
+      let hayOrdenes = false;
+
+      mesas.forEach(mesa => {
+        if (mesa.orders.length === 0) return;
+
+        // Filtrar solo comida
+        const comidasOrden = mesa.orders.filter(orden => {
+          return productos.comida.some(p => p.name === orden.name);
+        });
+
+        if (comidasOrden.length === 0) return;
+
+        hayOrdenes = true;
+
+        const card = document.createElement("div");
+        card.className = "orden-card";
+        
+        const ahora = new Date();
+        const hora = ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+        card.innerHTML = `
+          <div class="orden-header">
+            <div class="mesa-numero">Mesa ${mesa.id}</div>
+            <div class="tiempo">${hora}</div>
+          </div>
+          <ul class="orden-items">
+            ${comidasOrden.map(orden => `
+              <li>
+                <span class="cantidad">${orden.qty}</span>
+                ${orden.name}
+              </li>
+            `).join('')}
+          </ul>
+        `;
+
+        contenedor.appendChild(card);
+      });
+
+      if (!hayOrdenes) {
+        contenedor.innerHTML = '<div class="vacio">📭 No hay órdenes de comida pendientes</div>';
+      }
+    }
+
+    // Renderizar al cargar
+    renderOrdenesCocina();
+
+    // Auto-actualizar cada 3 segundos
+    setInterval(renderOrdenesCocina, 3000);
+  </script>
+</body>
+</html>
