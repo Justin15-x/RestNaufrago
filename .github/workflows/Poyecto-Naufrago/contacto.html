@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Contáctanos - El Náufrago</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+    <nav>
+        <h1>⚓ El Náufrago</h1>
+        <ul>
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="menu.html">Menú</a></li>
+            <li><a href="contacto.html">Contáctanos</a></li>
+            <li><a href="login.html">Sistema Interno</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="container">
+    <div id="breadcrumb" class="breadcrumb"></div>
+
+    <h2>Formulario de Pedido</h2>
+
+    <form onsubmit="enviarFormulario(event)">
+        <input type="text" placeholder="Nombre del cliente" required>
+        <input type="email" placeholder="Correo electrónico" required>
+        <textarea placeholder="Escribe tu pedido aquí..." rows="5" required></textarea>
+        <button type="submit">Enviar Pedido</button>
+    </form>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

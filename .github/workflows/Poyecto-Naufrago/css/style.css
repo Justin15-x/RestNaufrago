@@ -1,0 +1,181 @@
+/* ==========================================
+   EL NAUFRAGO - ESTILOS GENERALES
+   Autor: Proyecto Desarrollo Web
+   Descripción: Estilos globales responsivos
+   Paleta basada en tonos azul marino y océano
+========================================== */
+
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Variables de color (Facilita mantenimiento futuro) */
+:root {
+    --azul-oscuro: #0a1f44;
+    --azul-marino: #123a6f;
+    --azul-oceano: #1e5f9a;
+    --azul-claro: #e6f2ff;
+    --blanco: #ffffff;
+    --gris: #f4f4f4;
+}
+
+/* Tipografía general */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--azul-claro);
+    color: var(--azul-oscuro);
+}
+
+/* ==========================
+   MENÚ DE NAVEGACIÓN STICKY
+========================== */
+
+header {
+    background-color: var(--azul-oscuro);
+    padding: 15px 40px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav h1 {
+    color: var(--blanco);
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+nav ul li a {
+    color: var(--blanco);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+nav ul li a:hover {
+    color: #8ecfff;
+}
+
+/* ==========================
+   CONTENEDORES GENERALES
+========================== */
+
+.container {
+    padding: 60px 10%;
+}
+
+.hero {
+    text-align: center;
+    padding: 100px 20px;
+    background: linear-gradient(to right, var(--azul-marino), var(--azul-oceano));
+    color: var(--blanco);
+    border-radius: 10px;
+}
+
+.hero h2 {
+    font-size: 40px;
+    margin-bottom: 20px;
+}
+
+.btn {
+    background-color: var(--blanco);
+    color: var(--azul-marino);
+    padding: 12px 25px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.btn:hover {
+    background-color: #d0e6ff;
+}
+
+/* ==========================
+   TARJETAS MENÚ
+========================== */
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.card {
+    background: var(--blanco);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+    margin-bottom: 10px;
+}
+
+.price {
+    color: var(--azul-oceano);
+    font-weight: bold;
+}
+
+/* ==========================
+   FORMULARIO
+========================== */
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input, textarea {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+button {
+    padding: 12px;
+    border: none;
+    background-color: var(--azul-marino);
+    color: var(--blanco);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--azul-oceano);
+}
+
+/* ==========================
+   BREADCRUMBS
+========================== */
+
+.breadcrumb {
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media(max-width: 768px){
+    nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .hero h2 {
+        font-size: 28px;
+    }
+}
