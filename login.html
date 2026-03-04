@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>El Náufrago - Inicio</title>
+    <link rel="stylesheet" href="css/style.css">
+     <style>
+        
+        .login-box {
+        max-width: 350px; /* Controla qué tan ancho quieres el formulario */
+        margin: 0 auto;  /* Lo centra horizontalmente */
+        padding: 20px;
+    }
+        input{
+            width:100%;
+            padding:10px;
+            margin:10px 0;
+            box-sizing: border-box; /* Evita que el padding agrande el input más de la cuenta */
+        }
+        button{
+            width:100%;
+            padding:10px;
+            cursor:pointer;
+            background-color: #004466; /* Color opcional para que resalte */
+        }
+        .msg{
+            margin-top:10px;
+            color:red;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+
+<header>
+    <nav>
+        <h1>⚓ El Náufrago</h1>
+        <ul>
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="menu.html">Menú</a></li>
+            <li><a href="contacto.html">Contáctanos</a></li>
+            <li><a href="login.html">Sistema Interno</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="container">
+    <div id="breadcrumb" class="breadcrumb"></div>
+
+    <div class="hero">
+        <h2>Ingreso al sistema interno</h2>
+        <p>Unicamente es para empleados</p>
+        <br>
+         <h2>Iniciar sesión</h2>
+    <div class="login-box">
+   
+
+    <div class="box">
+    <h2>Login</h2>
+
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+
+    <div class="g-recaptcha" data-sitekey="TU_RECAPTCHA_SITE_KEY"></div>
+
+    <button onclick="login()">Entrar</button>
+    <div class="msg" id="msg"></div>
+</div>
+
+<script>
+const supabase = window.supabase.createClient(
+  "https://bdngrgorvczujhkyzbkl.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
+);
+
+async function login(){
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
+
+    const captcha = grecaptcha.getResponse();
+
+    if(!captcha){
+        msg.textContent = "Verifica el captcha";
+        return;
+    }
+
+    // 🔐 Login con Supabase Auth (MEJOR OPCIÓN)
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+    });
+
+    if(error){
+        msg.textContent = "Credenciales incorrectas";
+    }else{
+        msg.style.color="green";
+        msg.textContent = "Login correcto";
+        // window.location = "dashboard.html";
+    }
+}
+</script>
+</div>
+</div>
+</div>
+
+
+    
+
+<script src="js/app.js"></script>
+</body>
+</html>
