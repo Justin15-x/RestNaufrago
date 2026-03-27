@@ -80,12 +80,20 @@ window.handleRegister = async () => {
     try{
 
         // 🔐 validar captcha
-        const { data: captchaData } = await supabase.functions.invoke(
+        const { data: captchaData, error: error1 } = await supabase.functions.invoke(
             "verify-captcha",
             { body: { token } }
         );
 
-        if(!captchaData.success){
+        console.log("captchaData:", captchaData);
+
+        if(error1){
+            console.error(error1);
+            msg.textContent = "Error verificando captcha";
+            return;
+        }
+
+        if(!captchaData || captchaData.success !== true){
             msg.textContent = "Captcha inválido";
             return;
         }
