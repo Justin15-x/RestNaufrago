@@ -1,0 +1,17 @@
+<link rel="stylesheet" href="css/style.css">
+<input type="password" id="pass" placeholder="Nueva contraseña">
+<button onclick="updatePass()">Actualizar</button>
+
+<script>
+const supabase = window.supabase.createClient(
+  "https://bdngrgorvczujhkyzbkl.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
+);
+async function updatePass(){
+    const pass = document.getElementById("pass").value;
+
+    await supabase.auth.updateUser({ password: pass });
+
+    alert("Contraseña actualizada");
+}
+</script>

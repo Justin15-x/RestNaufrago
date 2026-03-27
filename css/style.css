@@ -179,3 +179,83 @@ button:hover {
         font-size: 28px;
     }
 }
+/* ==========================================
+   RESPONSIVE AVANZADO (MÓVIL)
+========================================== */
+
+/* 📱 Pantallas pequeñas */
+@media(max-width: 768px){
+
+    header {
+        padding: 10px 20px;
+    }
+
+    nav {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    nav ul li {
+        width: 100%;
+    }
+
+    nav ul li a {
+        display: block;
+        padding: 10px;
+        background: var(--azul-marino);
+        border-radius: 6px;
+    }
+
+    .container {
+        padding: 30px 5%;
+    }
+
+    .hero {
+        padding: 50px 15px;
+    }
+
+    .hero h2 {
+        font-size: 24px;
+    }
+
+    .login-box {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    input, button {
+        font-size: 16px; /* evita zoom raro en iPhone */
+    }
+
+    .menu-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 📱 Pantallas MUY pequeñas (celulares chicos) */
+@media(max-width: 480px){
+
+    .hero {
+        padding: 30px 10px;
+    }
+
+    .hero h2 {
+        font-size: 20px;
+    }
+
+    .btn {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+
+    nav h1 {
+        font-size: 18px;
+    }
+}

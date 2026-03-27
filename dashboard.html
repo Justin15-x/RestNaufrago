@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+<link rel="stylesheet" href="css/style.css">
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body{font-family:Arial;}
+.admin{display:none;}
+</style>
+</head>
+
+<body>
+
+<h1>Dashboard</h1>
+
+<p id="userInfo"></p>
+
+<button onclick="logout()">Cerrar sesión</button>
+
+<hr>
+
+<!-- 🔥 PANEL ADMIN -->
+<div id="adminPanel" class="admin">
+    <h2>Panel Admin</h2>
+
+    <table border="1" width="100%">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="usersTable"></tbody>
+    </table>
+    <a href="appB.html">Ir a App B</a>
+</div>
+
+<script>
+const supabase = window.supabase.createClient(
+  "https://bdngrgorvczujhkyzbkl.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
+);
+
+async function init(){
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if(!user){
+        window.location = "login.html";
+        return;
+    }
+
+    document.getElementById("userInfo").textContent = user.email;
+
+    // 🔐 obtener perfil
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+    if(profile.role === "admin"){
+        document.getElementById("adminPanel").style.display = "block";
+        loadUsers();
+    }
+}
+
+async function loadUsers(){
+
+    const { data } = await supabase
+        .from("profiles")
+        .select("*");
+
+    const table = document.getElementById("usersTable");
+    table.innerHTML = "";
+
+    data.forEach(u => {
+        table.innerHTML += `
+            <tr>
+                <td>${u.email}</td>
+                <td>${u.role}</td>
+                <td>
+                    <button onclick="makeAdmin('${u.id}')">Admin</button>
+                    <button onclick="makeUser('${u.id}')">User</button>
+                    <button onclick="deleteUser('${u.id}')">Eliminar</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+async function makeAdmin(id){
+    await supabase.from("profiles").update({ role: "admin" }).eq("id", id);
+    loadUsers();
+}
+
+async function makeUser(id){
+    await supabase.from("profiles").update({ role: "user" }).eq("id", id);
+    loadUsers();
+}
+
+async function deleteUser(id){
+    await supabase.from("profiles").delete().eq("id", id);
+    loadUsers();
+}
+
+async function logout(){
+    await supabase.auth.signOut();
+    window.location = "login.html";
+}
+
+init();
+const { data } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("user_id", user.id);
+
+async function closeSession(id){
+    await supabase.from("sessions").delete().eq("id", id);
+}
+</script>
+
+</body>
+</html>

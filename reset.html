@@ -1,0 +1,19 @@
+<link rel="stylesheet" href="css/style.css">
+<input type="email" id="email" placeholder="Email">
+<button onclick="reset()">Recuperar</button>
+
+<script>
+const supabase = window.supabase.createClient(
+  "https://bdngrgorvczujhkyzbkl.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
+);
+async function reset(){
+    const email = document.getElementById("email").value;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://comforting-sunburst-ef90d0.netlify.app/update.html"
+    });
+
+    alert("Revisa tu correo");
+}
+</script>
