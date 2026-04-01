@@ -97,11 +97,13 @@ window.handleRegister = async () => {
         if(error1){
             console.error(error1);
             msg.textContent = "Error verificando captcha";
+            grecaptcha.reset(); // <--- ESTO ES VITAL: Limpia el check para que el usuario marque uno nuevo
             return;
         }
 
         if(!captchaData || captchaData.success !== true){
             msg.textContent = "Captcha inválido";
+            grecaptcha.reset(); // <--- ESTO ES VITAL: Limpia el check para que el usuario marque uno nuevo
             // En tu función handleRegister, cambia el console.log
             if (captchaData['error-codes']) {
             console.log("EL ERROR REAL ES:", captchaData['error-codes'][0]);
