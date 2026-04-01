@@ -71,6 +71,13 @@ window.handleRegister = async () => {
     const msg = document.getElementById("msg");
 
     const token = grecaptcha.getResponse();
+    console.log("Token capturado:", token); // Debe ser un string larguísimo
+    
+    // Asegúrate de que el body sea exactamente un objeto con la propiedad "token"
+    const { data: captchaData, error: error1 } = await supabase.functions.invoke(
+        "dynamic-function", 
+        { body: { token: token } } // Explícitamente { token }
+    );
 
     if(!token){
         msg.textContent = "Verifica el captcha";
