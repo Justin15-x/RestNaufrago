@@ -103,7 +103,9 @@ window.handleRegister = async () => {
         if(!captchaData || captchaData.success !== true){
             msg.textContent = "Captcha inválido";
             // En tu función handleRegister, cambia el console.log
-            console.log("Detalle del error:", captchaData['error-codes']);
+            if (captchaData['error-codes']) {
+            console.log("EL ERROR REAL ES:", captchaData['error-codes'][0]);
+            }
             return;
         }
 
