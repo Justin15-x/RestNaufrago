@@ -81,7 +81,7 @@ window.handleRegister = async () => {
 
         // 🔐 validar captcha
         const { data: captchaData, error: error1 } = await supabase.functions.invoke(
-            "verify-captcha",
+            "dynamic-function",
             { body: { token } }
         );
 
