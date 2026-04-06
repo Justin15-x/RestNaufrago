@@ -1,150 +1,178 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Dashboard</title>
-<link rel="stylesheet" href="css/style.css">
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-body{font-family:Arial;}
-.admin{display:none;}
-</style>
+    <meta charset="UTF-8">
+    <title>Panel de Administración - El Náufrago</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: #2a2a2a; padding: 30px; border-radius: 10px; }
+        .admin-section { display: none; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #333; }
+        th, td { border: 1px solid #444; padding: 12px; text-align: left; }
+        th { background-color: #004466; }
+        button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        .btn-logout { background: #ff4444; color: white; float: right; }
+        .btn-role { background: #0088cc; color: white; margin-right: 5px; }
+        .btn-delete { background: #cc0000; color: white; }
+        .btn-kick { background: #ffaa00; color: black; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8em; background: #444; }
+    </style>
 </head>
-
 <body>
 
-<h1>Dashboard</h1>
+<div class="container">
+    <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    <h1>⚓ Dashboard Administrativo</h1>
+    <p>Bienvenido: <strong id="userEmail">Cargando...</strong></p>
 
-<p id="userInfo"></p>
+    <hr>
 
-<button onclick="logout()">Cerrar sesión</button>
+    <div id="adminPanel" class="admin-section">
+        <h2>👥 Gestión de Usuarios y Roles</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Rol Actual</th>
+                    <th>Acciones de Rango</th>
+                </tr>
+            </thead>
+            <tbody id="usersTable"></tbody>
+        </table>
 
-<hr>
+        <br>
 
-<!-- 🔥 PANEL ADMIN -->
-<div id="adminPanel" class="admin">
-    <h2>Panel Admin</h2>
-
-    <table border="1" width="100%">
-        <thead>
-            <tr>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="usersTable"></tbody>
-    </table>
-    <a href="appB.html">Ir a App B</a>
+        <h2>📱 Monitoreo de Sesiones Activas</h2>
+        <p style="font-size: 0.9em; color: #aaa;">(Requisito: Manejo de multisesiones y expulsión de usuarios)</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Dispositivo / Navegador</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="sessionsTable"></tbody>
+        </table>
+    </div>
 </div>
 
-<script>
-    // Script de protección en admin-dashboard.html
-async function checkAdmin() {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-        window.location.href = "login.html";
-        return;
-    }
+<script type="module">
+    // 1. Inicializar Supabase
+    const supabase = window.supabase.createClient(
+        "https://bdngrgorvczujhkyzbkl.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
+    );
 
-    const { data } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
+    // 2. Proteger la ruta y cargar datos
+    async function init() {
+        const { data: { user } } = await supabase.auth.getUser();
 
-    if (data.role !== 'admin') {
-        alert("Acceso denegado. No eres administrador.");
-        window.location.href = "login.html";
-    }
-}
-checkAdmin();
-const supabase = window.supabase.createClient(
-  "https://bdngrgorvczujhkyzbkl.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
-);
+        if (!user) {
+            window.location.href = "login.html";
+            return;
+        }
 
-async function init(){
+        document.getElementById("userEmail").textContent = user.email;
 
-    const { data: { user } } = await supabase.auth.getUser();
+        // Verificar si es Admin en la tabla profiles
+        const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
 
-    if(!user){
-        window.location = "login.html";
-        return;
-    }
+        if (!profile || profile.role !== 'admin') {
+            alert("Acceso denegado: Se requieren permisos de Superusuario.");
+            window.location.href = "login.html"; // O a su respectivo dashboard
+            return;
+        }
 
-    document.getElementById("userInfo").textContent = user.email;
-
-    // 🔐 obtener perfil
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-    if(profile.role === "admin"){
+        // Si es admin, mostrar panel y cargar listas
         document.getElementById("adminPanel").style.display = "block";
         loadUsers();
+        loadSessions();
     }
-}
 
-async function loadUsers(){
+    // 3. Cargar Tabla de Usuarios
+    async function loadUsers() {
+        const { data: users } = await supabase.from("profiles").select("*");
+        const table = document.getElementById("usersTable");
+        table.innerHTML = "";
 
-    const { data } = await supabase
-        .from("profiles")
-        .select("*");
+        users.forEach(u => {
+            table.innerHTML += `
+                <tr>
+                    <td>${u.email}</td>
+                    <td><span class="status-badge">${u.role}</span></td>
+                    <td>
+                        <button class="btn-role" onclick="updateRole('${u.id}', 'admin')">Admin</button>
+                        <button class="btn-role" onclick="updateRole('${u.id}', 'mesero')">Mesero</button>
+                        <button class="btn-role" onclick="updateRole('${u.id}', 'cocina')">Cocina</button>
+                        <button class="btn-delete" onclick="deleteUser('${u.id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
 
-    const table = document.getElementById("usersTable");
-    table.innerHTML = "";
+    // 4. Cargar Tabla de Sesiones (Monitoreo)
+    async function loadSessions() {
+        // Hacemos un JOIN para traer el email del perfil junto a la sesión
+        const { data: sessions } = await supabase
+            .from("sessions")
+            .select(`id, user_agent, user_id, profiles(email)`);
 
-    data.forEach(u => {
-        table.innerHTML += `
-            <tr>
-                <td>${u.email}</td>
-                <td>${u.role}</td>
-                <td>
-                    <button onclick="makeAdmin('${u.id}')">Admin</button>
-                    <button onclick="makeUser('${u.id}')">User</button>
-                    <button onclick="deleteUser('${u.id}')">Eliminar</button>
-                </td>
-            </tr>
-        `;
-    });
-}
+        const table = document.getElementById("sessionsTable");
+        table.innerHTML = "";
 
-async function makeAdmin(id){
-    await supabase.from("profiles").update({ role: "admin" }).eq("id", id);
-    loadUsers();
-}
+        if(sessions) {
+            sessions.forEach(s => {
+                table.innerHTML += `
+                    <tr>
+                        <td>${s.profiles?.email || 'Desconocido'}</td>
+                        <td style="font-size: 0.8em; color: #ccc;">${s.user_agent.substring(0, 50)}...</td>
+                        <td>
+                            <button class="btn-kick" onclick="closeSession('${s.id}')">Finalizar Sesión</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    }
 
-async function makeUser(id){
-    await supabase.from("profiles").update({ role: "user" }).eq("id", id);
-    loadUsers();
-}
+    // --- FUNCIONES GLOBALES (Expuestas a window) ---
 
-async function deleteUser(id){
-    await supabase.from("profiles").delete().eq("id", id);
-    loadUsers();
-}
+    window.updateRole = async (id, newRole) => {
+        const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", id);
+        if (error) alert(error.message);
+        loadUsers();
+        loadSessions();
+    };
 
-async function logout(){
-    await supabase.auth.signOut();
-    window.location = "login.html";
-}
+    window.deleteUser = async (id) => {
+        if (confirm("¿Estás seguro de eliminar este usuario? Esto no se puede deshacer.")) {
+            await supabase.from("profiles").delete().eq("id", id);
+            loadUsers();
+        }
+    };
 
-init();
-const { data } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("user_id", user.id);
+    window.closeSession = async (sessionId) => {
+        if (confirm("¿Expulsar al usuario de esta sesión?")) {
+            await supabase.from("sessions").delete().eq("id", sessionId);
+            loadSessions();
+        }
+    };
 
-async function closeSession(id){
-    await supabase.from("sessions").delete().eq("id", id);
-}
+    window.logout = async () => {
+        await supabase.auth.signOut();
+        window.location.href = "login.html";
+    };
+
+    // Ejecutar al cargar
+    init();
 </script>
 
 </body>
