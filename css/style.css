@@ -1,33 +1,41 @@
 /* ==========================================
-   EL NAUFRAGO - SISTEMA INTEGRAL RESPONSIVO
-   Optimizado para POCO M7 y Desktop
+   EL NAUFRAGO - ESTILOS GENERALES
+   Autor: Proyecto Desarrollo Web
+   Descripción: Estilos globales responsivos
+   Paleta basada en tonos azul marino y océano
 ========================================== */
 
-:root {
-    --azul-oscuro: #0a1f44;
-    --azul-marino: #123a6f;
-    --azul-oceano: #1e5f9a;
-    --azul-claro: #e6f2ff;
-    --blanco: #ffffff;
-}
-
+/* Reset básico */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Variables de color (Facilita mantenimiento futuro) */
+:root {
+    --azul-oscuro: #0a1f44;
+    --azul-marino: #123a6f;
+    --azul-oceano: #1e5f9a;
+    --azul-claro: #e6f2ff;
+    --blanco: #ffffff;
+    --gris: #f4f4f4;
+}
+
+/* Tipografía general */
 body {
     font-family: 'Segoe UI', sans-serif;
     background-color: var(--azul-claro);
     color: var(--azul-oscuro);
-    overflow-x: hidden; /* Evita scroll horizontal */
 }
 
-/* --- NAVEGACIÓN --- */
+/* ==========================
+   MENÚ DE NAVEGACIÓN STICKY
+========================== */
+
 header {
     background-color: var(--azul-oscuro);
-    padding: 1rem;
+    padding: 15px 40px;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -35,142 +43,219 @@ header {
 
 nav {
     display: flex;
-    flex-direction: column; /* Por defecto en móvil */
+    justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
-    gap: 10px;
 }
 
 nav h1 {
     color: var(--blanco);
-    font-size: 1.2rem;
 }
 
 nav ul {
     list-style: none;
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap; /* Evita que se amontonen en pantallas chicas */
-    justify-content: center;
+    gap: 20px;
 }
 
 nav ul li a {
     color: var(--blanco);
     text-decoration: none;
-    font-size: 0.8rem;
     font-weight: bold;
 }
 
-/* --- CONTENEDORES Y HERO --- */
+nav ul li a:hover {
+    color: #8ecfff;
+}
+
+/* ==========================
+   CONTENEDORES GENERALES
+========================== */
+
 .container {
-    padding: 20px 5%;
+    padding: 60px 10%;
 }
 
 .hero {
     text-align: center;
-    padding: 40px 20px;
-    background: linear-gradient(135deg, var(--azul-marino), var(--azul-oceano));
+    padding: 100px 20px;
+    background: linear-gradient(to right, var(--azul-marino), var(--azul-oceano));
     color: var(--blanco);
-    border-radius: 12px;
-    margin-bottom: 30px;
+    border-radius: 10px;
 }
 
 .hero h2 {
-    font-size: 1.8rem;
-    margin-bottom: 15px;
+    font-size: 40px;
+    margin-bottom: 20px;
 }
 
-/* --- GRID DEL MENÚ (EL PROBLEMA PRINCIPAL) --- */
+.btn {
+    background-color: var(--blanco);
+    color: var(--azul-marino);
+    padding: 12px 25px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.btn:hover {
+    background-color: #d0e6ff;
+}
+
+/* ==========================
+   TARJETAS MENÚ
+========================== */
+
 .menu-grid {
     display: grid;
-    grid-template-columns: 1fr; /* Una columna en móvil */
-    gap: 20px;
-    margin-top: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
 }
 
 .card {
     background: var(--blanco);
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: transform 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 .card h3 {
-    margin-bottom: 8px;
-    font-size: 1.1rem;
-}
-
-.card p {
-    font-size: 0.9rem;
-    color: #555;
     margin-bottom: 10px;
 }
 
 .price {
     color: var(--azul-oceano);
     font-weight: bold;
-    display: block;
 }
 
-/* --- FORMULARIOS (LOGIN/RECU) --- */
-.login-box {
-    max-width: 400px;
-    margin: 0 auto;
+/* ==========================
+   FORMULARIO
+========================== */
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-input {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
+input, textarea {
+    padding: 10px;
+    border-radius: 8px;
     border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 16px; /* Evita zoom en móvil */
 }
 
 button {
-    width: 100%;
     padding: 12px;
-    background: var(--azul-oscuro);
-    color: white;
     border: none;
-    border-radius: 6px;
-    font-weight: bold;
+    background-color: var(--azul-marino);
+    color: var(--blanco);
+    border-radius: 8px;
     cursor: pointer;
 }
 
-/* ==========================================
-   TABLET / LAPTOP (A partir de 768px)
-========================================== */
-@media (min-width: 768px) {
+button:hover {
+    background-color: var(--azul-oceano);
+}
+
+/* ==========================
+   BREADCRUMBS
+========================== */
+
+.breadcrumb {
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media(max-width: 768px){
     nav {
-        flex-direction: row; /* Vuelve a ser horizontal */
-        justify-content: space-between;
-    }
-
-    nav h1 {
-        font-size: 1.5rem;
-    }
-
-    nav ul {
-        gap: 25px;
-    }
-
-    nav ul li a {
-        font-size: 1rem;
-    }
-
-    .hero {
-        padding: 80px 40px;
+        flex-direction: column;
+        gap: 10px;
     }
 
     .hero h2 {
-        font-size: 2.5rem;
+        font-size: 28px;
+    }
+}
+/* ==========================================
+   RESPONSIVE AVANZADO (MÓVIL)
+========================================== */
+
+/* 📱 Pantallas pequeñas */
+@media(max-width: 768px){
+
+    header {
+        padding: 10px 20px;
     }
 
-    /* Recupera las 3 columnas de tu laptop */
+    nav {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    nav ul li {
+        width: 100%;
+    }
+
+    nav ul li a {
+        display: block;
+        padding: 10px;
+        background: var(--azul-marino);
+        border-radius: 6px;
+    }
+
+    .container {
+        padding: 30px 5%;
+    }
+
+    .hero {
+        padding: 50px 15px;
+    }
+
+    .hero h2 {
+        font-size: 24px;
+    }
+
+    .login-box {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    input, button {
+        font-size: 16px; /* evita zoom raro en iPhone */
+    }
+
     .menu-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 📱 Pantallas MUY pequeñas (celulares chicos) */
+@media(max-width: 480px){
+
+    .hero {
+        padding: 30px 10px;
+    }
+
+    .hero h2 {
+        font-size: 20px;
+    }
+
+    .btn {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+
+    nav h1 {
+        font-size: 18px;
     }
 }
