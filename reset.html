@@ -1,19 +1,128 @@
-<link rel="stylesheet" href="css/style.css">
-<input type="email" id="email" placeholder="Email">
-<button onclick="reset()">Recuperar</button>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Acceso - El Náufrago</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .auth-box { max-width: 380px; margin: 50px auto; padding: 25px; text-align: center; border-radius: 8px; background: #f9f9f9; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 4px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background: #004466; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:disabled { background: #ccc; }
+        .hidden { display: none; }
+        .msg { margin-top: 15px; font-size: 0.9em; font-weight: 500; }
+        h2 { color: #004466; margin-bottom: 5px; }
+        p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+    </style>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
 
-<script>
-const supabase = window.supabase.createClient(
-  "https://bdngrgorvczujhkyzbkl.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
-);
-async function reset(){
-    const email = document.getElementById("email").value;
+<div class="auth-box">
+    <div id="section-reset">
+        <h2>¿Olvidaste tu clave?</h2>
+        <p>Introduce tu email para recibir un enlace de recuperación.</p>
+        <input type="email" id="reset-email" placeholder="correo@ejemplo.com">
+        <div class="g-recaptcha" data-sitekey="6LcyipksAAAAAPUuodqJ2enwXh89G50IuuJdvEpQ"></div>
+        <button id="btnReset" onclick="handleRequestReset()">Enviar enlace</button>
+    </div>
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://comforting-sunburst-ef90d0.netlify.app/update.html"
-    });
+    <div id="section-update" class="hidden">
+        <h2>Nueva Contraseña</h2>
+        <p>Crea una clave segura para tu cuenta.</p>
+        <input type="password" id="new-password" placeholder="Nueva contraseña">
+        <input type="password" id="confirm-password" placeholder="Confirmar contraseña">
+        <button id="btnUpdate" onclick="handleUpdatePassword()">Actualizar contraseña</button>
+    </div>
 
-    alert("Revisa tu correo");
-}
+    <div id="msg" class="msg"></div>
+    <a href="login.html" style="display:block; margin-top:20px; color: #004466; text-decoration: none; font-size: 0.85em;">← Volver al inicio de sesión</a>
+</div>
+
+<script type="module">
+    const supabase = window.supabase.createClient(
+        "https://bdngrgorvczujhkyzbkl.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
+    );
+
+    const msg = document.getElementById("msg");
+
+    // LÓGICA DE DETECCIÓN: ¿Venimos de un correo de recuperación?
+    window.onload = async () => {
+        // Supabase pone un '#' en la URL con el access_token cuando vienes del correo
+        if (window.location.hash.includes("type=recovery") || window.location.hash.includes("access_token")) {
+            document.getElementById("section-reset").classList.add("hidden");
+            document.getElementById("section-update").classList.remove("hidden");
+            msg.textContent = "Sesión verificada. Puedes cambiar tu clave.";
+            msg.style.color = "blue";
+        }
+    };
+
+    // PASO A: Solicitar el correo
+    window.handleRequestReset = async () => {
+        const email = document.getElementById("reset-email").value;
+        const btn = document.getElementById("btnReset");
+        const token = grecaptcha.getResponse();
+
+        if (!email || !token) { 
+            msg.textContent = "Completa el email y el captcha"; 
+            msg.style.color = "red"; 
+            return; 
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Procesando...";
+
+        try {
+            const { data: captchaData } = await supabase.functions.invoke("dynamic-function", { body: { token } });
+            if (!captchaData?.success) throw new Error("Captcha inválido");
+
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.href // Se manda a sí misma
+            });
+
+            if (error) throw error;
+
+            msg.style.color = "green";
+            msg.textContent = "📩 Enlace enviado. Revisa tu bandeja de entrada.";
+        } catch (err) {
+            msg.style.color = "red";
+            msg.textContent = err.message;
+            btn.disabled = false;
+            btn.textContent = "Enviar enlace";
+            grecaptcha.reset();
+        }
+    };
+
+    // PASO B: Actualizar la clave real
+    window.handleUpdatePassword = async () => {
+        const pass = document.getElementById("new-password").value;
+        const confirm = document.getElementById("confirm-password").value;
+        const btn = document.getElementById("btnUpdate");
+
+        if (pass.length < 6) { msg.textContent = "Mínimo 6 caracteres"; return; }
+        if (pass !== confirm) { msg.textContent = "Las contraseñas no coinciden"; return; }
+
+        btn.disabled = true;
+        msg.textContent = "Actualizando...";
+
+        try {
+            const { error } = await supabase.auth.updateUser({ password: pass });
+            if (error) throw error;
+
+            msg.style.color = "green";
+            msg.textContent = "✅ ¡Contraseña actualizada! Redirigiendo...";
+            
+            setTimeout(() => { window.location.href = "login.html"; }, 2000);
+        } catch (err) {
+            msg.style.color = "red";
+            msg.textContent = err.message;
+            btn.disabled = false;
+        }
+    };
 </script>
+
+</body>
+</html>
