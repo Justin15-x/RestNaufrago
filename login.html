@@ -30,7 +30,7 @@
 
 <div class="container">
     <div class="hero">
-        <h2>Control de Tripulación</h2>
+        <h2>Sistema Interno</h2>
         <div class="login-box">
             <div id="login-fields">
                 <input type="email" id="email" placeholder="Correo electrónico">
@@ -167,7 +167,7 @@
             msg.textContent = "✅ Identidad confirmada. Entrando...";
 
             setTimeout(() => {
-                const routes = { admin: 'admin-dashboard.html', cocina: 'cocina.html', barra: 'barra.html' };
+                const routes = { admin: 'dashboard.html', cocina: 'cocina.html', barra: 'barra.html' };
                 window.location.href = routes[role] || 'mesero-dashboard.html';
             }, 1000);
 
