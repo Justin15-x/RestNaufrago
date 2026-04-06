@@ -4,45 +4,18 @@
     <meta charset="UTF-8">
     <title>El Náufrago - Login</title>
     <link rel="stylesheet" href="css/style.css">
-
     <style>
-        .login-box {
-            max-width: 350px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        input{
-            width:100%;
-            padding:10px;
-            margin:10px 0;
-            box-sizing: border-box;
-        }
-
-        button{
-            width:100%;
-            padding:10px;
-            cursor:pointer;
-            background-color: #004466;
-            color:white;
-        }
-
-        .msg{
-            margin-top:10px;
-            color:red;
-        }
-
-        .link{
-            margin-top:10px;
-            display:block;
-            text-align:center;
-        }
+        .login-box { max-width: 350px; margin: 0 auto; padding: 20px; }
+        input, button { width:100%; padding:10px; margin:10px 0; box-sizing: border-box; }
+        button { cursor:pointer; background-color: #004466; color:white; border:none; }
+        button:disabled { background-color: #ccc; }
+        .msg { margin-top:10px; color:red; text-align: center; }
+        .link { margin-top:10px; display:block; text-align:center; color: azure; text-decoration: none; }
+        #otp-section { display: none; border-top: 1px solid #ccc; margin-top: 10px; padding-top: 10px; }
     </style>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
-
 <body>
 
 <header>
@@ -51,7 +24,6 @@
         <ul>
             <li><a href="index.html">Inicio</a></li>
             <li><a href="menu.html">Menú</a></li>
-            <li><a href="contacto.html">Contáctanos</a></li>
             <li><a href="login.html">Sistema Interno</a></li>
         </ul>
     </nav>
@@ -60,138 +32,167 @@
 <div class="container">
     <div class="hero">
         <h2>Ingreso al sistema interno</h2>
-
         <div class="login-box">
+            <div id="login-fields">
+                <input type="email" id="email" placeholder="Email">
+                <input type="password" id="password" placeholder="Password">
+                <div class="g-recaptcha" data-sitekey="6LcyipksAAAAAPUuodqJ2enwXh89G50IuuJdvEpQ"></div>
+                <button id="btnLogin" onclick="handleLogin()">Entrar</button>
+            </div>
 
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <input type="text" id="otp" placeholder="Código OTP">
+            <div id="otp-section">
+                <p style="color:white; font-size: 0.9em;">Introduce el código enviado a tu alerta:</p>
+                <input type="text" id="otp" placeholder="Código OTP (6 dígitos)">
+                <button id="btnVerify" onclick="handleVerifyOTP()">Verificar Código</button>
+            </div>
 
-            <div class="g-recaptcha" data-sitekey="6LcyipksAAAAAPUuodqJ2enwXh89G50IuuJdvEpQ"></div>
-
-            <button onclick="handleLogin()">Entrar</button>
-            <a style="color: azure;" href="reset.html">¿Olvidaste tu contraseña?</a>
-            <a style="color: azure;" class="link" href="registro.html">¿No tienes cuenta? Regístrate</a>
-
+            <a class="link" href="reset.html">¿Olvidaste tu contraseña?</a>
+            <a class="link" href="registro.html">¿No tienes cuenta? Regístrate</a>
             <div class="msg" id="msg"></div>
         </div>
     </div>
 </div>
 
-
 <script type="module">
-    // 1. Configuración inicial
     const supabase = window.supabase.createClient(
         "https://bdngrgorvczujhkyzbkl.supabase.co",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
-);
-    // Definimos la función globalmente para que el botón pueda verla
+    );
+
+    let currentUserId = null; // Para guardar el ID tras el paso 1
+
     window.handleLogin = async () => {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
         const msg = document.getElementById("msg");
+        const btn = document.getElementById("btnLogin");
         const token = grecaptcha.getResponse();
 
-        if (!email) { msg.textContent = "Ingresa tu email"; return; }
+        if (!email || !password) { msg.textContent = "Completa todos los campos"; return; }
         if (!token) { msg.textContent = "Verifica el captcha"; return; }
 
+        btn.disabled = true;
+        btn.textContent = "Verificando...";
+        msg.textContent = "";
+
         try {
-            // --- PASO 1: COMPROBAR BLOQUEO (Antes de nada) ---
+            // 1. COMPROBAR BLOQUEO
             const { data: attemptData } = await supabase
                 .from("login_attempts")
                 .select("*")
                 .eq("email", email)
-                .single();
+                .maybeSingle();
 
-            if (attemptData && attemptData.blocked_until && new Date(attemptData.blocked_until) > new Date()) {
-                msg.textContent = "Cuenta bloqueada temporalmente";
-                return;
+            if (attemptData?.blocked_until && new Date(attemptData.blocked_until) > new Date()) {
+                throw new Error("Cuenta bloqueada temporalmente. Intenta más tarde.");
             }
 
-            // --- PASO 2: VALIDAR CAPTCHA (Edge Function) ---
-            const { data: captchaData } = await supabase.functions.invoke(
-                "verify-captcha",
+            // 2. VALIDAR CAPTCHA (Usando tu función que ya sirve)
+            const { data: captchaData, error: capError } = await supabase.functions.invoke(
+                "dynamic-function",
                 { body: { token } }
             );
 
-            if (!captchaData?.success) {
-                msg.textContent = "Captcha inválido";
-                return;
+            if (capError || !captchaData?.success) {
+                grecaptcha.reset();
+                throw new Error("Captcha inválido o expirado");
             }
 
-            // --- PASO 3: INTENTAR LOGIN ---
+            // 3. INTENTAR LOGIN
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                 email,
                 password
             });
 
-            // --- PASO 4: SI EL LOGIN FALLA ---
             if (authError) {
+                // Registrar intento fallido
                 const newAttempts = (attemptData?.attempts || 0) + 1;
                 await supabase.from("login_attempts").upsert({
                     email,
                     attempts: newAttempts,
-                    blocked_until: newAttempts >= 5 
-                        ? new Date(Date.now() + 10 * 60000) 
-                        : null
+                    blocked_until: newAttempts >= 5 ? new Date(Date.now() + 10 * 60000).toISOString() : null
                 });
                 throw authError;
             }
 
-            // --- PASO 5: SI EL LOGIN ES CORRECTO ---
-            // A. Limpiar intentos fallidos
+            // 4. LOGIN CORRECTO -> GENERAR OTP
             await supabase.from("login_attempts").delete().eq("email", email);
-
-            // B. Generar y enviar código MFA (Simulado)
-            const user = authData.user;
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
             
-            await supabase.from("mfa_codes").insert({
-                user_id: user.id,
-                code: code,
-                expires_at: new Date(Date.now() + 5 * 60000)
+            currentUserId = authData.user.id;
+            const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Guardar código en la tabla mfa_codes
+            const { error: mfaError } = await supabase.from("mfa_codes").insert({
+                user_id: currentUserId,
+                code: generatedCode,
+                expires_at: new Date(Date.now() + 5 * 60000).toISOString()
             });
 
-            alert("Tu código de verificación es: " + code);
-            msg.style.color = "green";
-            msg.textContent = "Código enviado. Ingrésalo para continuar.";
+            if (mfaError) throw mfaError;
 
-            // Aquí podrías mostrar el campo OTP que tienes oculto o redirigir
-            // a la función verifyOTP cuando el usuario escriba el código.
+            // Simulación de envío (Alert para pruebas)
+            alert("🔐 CÓDIGO DE ACCESO: " + generatedCode);
+            
+            // Interfaz: Ocultar login, mostrar OTP
+            document.getElementById("login-fields").style.display = "none";
+            document.getElementById("otp-section").style.display = "block";
+            msg.style.color = "green";
+            msg.textContent = "Código verificado. Introduce el OTP enviado.";
 
         } catch (err) {
             msg.style.color = "red";
             msg.textContent = err.message;
+            btn.disabled = false;
+            btn.textContent = "Entrar";
+            grecaptcha.reset();
         }
     };
 
-    // Función para verificar el OTP (se llamaría desde otro botón o evento)
-    window.verifyOTP = async (userId, code) => {
-        const { data } = await supabase
-            .from("mfa_codes")
-            .select("*")
-            .eq("user_id", userId)
-            .eq("code", code)
-            .eq("used", false)
-            .single();
+    window.handleVerifyOTP = async () => {
+        const codeInput = document.getElementById("otp").value;
+        const msg = document.getElementById("msg");
+        const btn = document.getElementById("btnVerify");
 
-        if (!data || new Date(data.expires_at) < new Date()) {
-            alert("Código inválido o expirado");
-            return false;
+        if (!codeInput) return;
+
+        btn.disabled = true;
+        msg.textContent = "Validando OTP...";
+
+        try {
+            const { data, error } = await supabase
+                .from("mfa_codes")
+                .select("*")
+                .eq("user_id", currentUserId)
+                .eq("code", codeInput)
+                .eq("used", false)
+                .maybeSingle();
+
+            if (error || !data || new Date(data.expires_at) < new Date()) {
+                throw new Error("Código inválido o expirado");
+            }
+
+            // Marcar código como usado
+            await supabase.from("mfa_codes").update({ used: true }).eq("id", data.id);
+            
+            // Registrar Sesión
+            await supabase.from("sessions").insert({
+                user_id: currentUserId,
+                user_agent: navigator.userAgent
+            });
+
+            msg.style.color = "green";
+            msg.textContent = "Acceso concedido. Redirigiendo...";
+            
+            setTimeout(() => {
+                window.location.href = "dashboard.html"; // Asegúrate que esta página exista
+            }, 1500);
+
+        } catch (err) {
+            msg.style.color = "red";
+            msg.textContent = err.message;
+            btn.disabled = false;
         }
-
-        await supabase.from("mfa_codes").update({ used: true }).eq("id", data.id);
-        
-        // Registrar sesión final
-        await supabase.from("sessions").insert({
-            user_id: userId,
-            user_agent: navigator.userAgent
-        });
-
-        window.location = "dashboard.html";
     };
-
 </script>
-
 </body>
 </html>
