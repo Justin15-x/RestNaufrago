@@ -62,6 +62,11 @@
         } catch (err) {
             msg.style.color = "red";
             msg.textContent = err.message;
+            console.error("Error completo:", err); // Esto te dirá exactamente qué pasa en la consola
+            msg.style.color = "red";
+            msg.textContent = "Error: " + err.message; // Aquí verás el "Too many requests" en la pantalla
+            btn.disabled = false;
+            btn.textContent = "Reintentar";
             btn.disabled = false;
             grecaptcha.reset();
         }
