@@ -148,50 +148,53 @@
         }
     };
 
-    window.handleVerifyOTP = async () => {
-        const codeInput = document.getElementById("otp").value;
-        const msg = document.getElementById("msg");
-        const btn = document.getElementById("btnVerify");
+   window.handleVerifyOTP = async () => {
+    const codeInput = document.getElementById("otp").value;
+    const msg = document.getElementById("msg");
 
-        if (!codeInput) return;
+    try {
+        // A. Verificar el OTP en tu tabla mfa_codes
+        const { data: mfaData, error: mfaError } = await supabase
+            .from("mfa_codes")
+            .select("*")
+            .eq("user_id", currentUserId)
+            .eq("code", codeInput)
+            .eq("used", false)
+            .maybeSingle();
 
-        btn.disabled = true;
-        msg.textContent = "Validando OTP...";
+        if (mfaError || !mfaData) throw new Error("Código inválido o expirado");
 
-        try {
-            const { data, error } = await supabase
-                .from("mfa_codes")
-                .select("*")
-                .eq("user_id", currentUserId)
-                .eq("code", codeInput)
-                .eq("used", false)
-                .maybeSingle();
+        // B. Marcar código como usado
+        await supabase.from("mfa_codes").update({ used: true }).eq("id", mfaData.id);
 
-            if (error || !data || new Date(data.expires_at) < new Date()) {
-                throw new Error("Código inválido o expirado");
-            }
+        // C. CONSULTAR EL ROL DEL USUARIO
+        const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", currentUserId)
+            .single();
 
-            // Marcar código como usado
-            await supabase.from("mfa_codes").update({ used: true }).eq("id", data.id);
-            
-            // Registrar Sesión
-            await supabase.from("sessions").insert({
-                user_id: currentUserId,
-                user_agent: navigator.userAgent
-            });
+        if (profileError) throw profileError;
 
-            msg.style.color = "green";
-            msg.textContent = "Acceso concedido. Redirigiendo...";
-            
-            setTimeout(() => {
-                window.location.href = "dashboard.html"; // Asegúrate que esta página exista
-            }, 1500);
+        // D. REDIRIGIR SEGÚN ROL
+        const role = profile.role;
+        console.log("Accediendo como:", role);
 
-        } catch (err) {
-            msg.style.color = "red";
-            msg.textContent = err.message;
-            btn.disabled = false;
+        if (role === 'admin') {
+            window.location.href = "admin-dashboard.html";
+        } else if (role === 'cocina') {
+            window.location.href = "cocina.html";
+        } else if (role === 'barra') {
+            window.location.href = "barra.html";
+        } else {
+            window.location.href = "mesero-dashboard.html";
         }
+
+    } catch (err) {
+        msg.style.color = "red";
+        msg.textContent = err.message;
+    }
+
     };
 </script>
 </body>
