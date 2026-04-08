@@ -111,6 +111,22 @@
 
             if (authError) throw authError;
 
+            if (authData.user) {
+                const { error: profileError } = await supabase
+                    .from("profiles")
+                    .insert([
+                        { 
+                            id: authData.user.id, // Sincronizamos con el ID de Auth
+                            email: email, 
+                            role: "usuario" // Rol por defecto según la práctica
+                        }
+                    ]);
+
+                if (profileError) {
+                    console.error("Error al crear perfil:", profileError.message);
+                    // Opcional: Podrías manejar si el perfil ya existe
+                }
+            }
             // ÉXITO
             msg.style.color = "green";
             msg.textContent = "¡Registro exitoso! Revisa tu bandeja de entrada.";
