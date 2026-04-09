@@ -67,13 +67,31 @@
     );
 
     // 2. Proteger la ruta y cargar datos
-    async function init() {
-        const { data: { user } } = await supabase.auth.getUser();
+    async function middlewareAvanzado() {
+    const { data: { session } } = await supabase.auth.getSession();
 
-        if (!user) {
-            window.location.href = "login.html";
-            return;
-        }
+    // 1. ¿Hay sesión activa?
+    if (!session) window.location.href = "login.html";
+
+    // 2. ¿La sesión existe en nuestra tabla de monitoreo? (Parte 5 de la práctica)
+    const { data: activeSession } = await supabase
+        .from("sessions")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+    if (!activeSession) {
+        await supabase.auth.signOut();
+        alert("Tu sesión ha sido revocada por el administrador.");
+        window.location.href = "login.html";
+    }
+    
+    // 3. Registrar acceso en logs (Monitoreo)
+    await supabase.from("audit_logs").insert({
+        user_id: session.user.id,
+        action: "Acceso a página: " + window.location.pathname
+    });
+}
 
         document.getElementById("userEmail").textContent = user.email;
 
