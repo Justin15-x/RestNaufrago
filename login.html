@@ -61,31 +61,23 @@
 </div>
 
 <script type="module">
-    // Cambia estos valores con cada carga de página (genera en el servidor o en JS)
+    // 1. Configuración de variables del Captcha Matemático
     var _ca = 8, _cb = 16, _cc = 24;
 
-    function checkCaptcha() {
+    // Hacer estas funciones disponibles globalmente para el input y validación
+    window.checkCaptcha = function() {
         var val = parseInt(document.getElementById('captcha-input').value);
         var fb  = document.getElementById('captcha-feedback');
         if (isNaN(val)) { fb.textContent = ''; return; }
         if (val === _cc) {
-        fb.textContent = '✓ correcto';
-        fb.style.color = 'green';
+            fb.textContent = '✓ correcto';
+            fb.style.color = 'lightgreen';
         } else {
-        fb.textContent = '✗ incorrecto';
-        fb.style.color = 'red';
+            fb.textContent = '✗ incorrecto';
+            fb.style.color = 'red';
         }
     }
 
-    // Llama esto antes de hacer submit
-    function validateCaptcha() {
-        var val = parseInt(document.getElementById('captcha-input').value);
-        if (val !== _cc) {
-        alert('Por favor resuelve la verificación correctamente.');
-        return false;
-        }
-        return true;
-    }
     const supabase = window.supabase.createClient(
         "https://bdngrgorvczujhkyzbkl.supabase.co",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
@@ -93,46 +85,53 @@
 
     let currentUserId = null;
 
-    // EXPOSICIÓN GLOBAL PARA QUE ONCLICK FUNCIONE
     window.handleLogin = async () => {
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
+        const mathVal = parseInt(document.getElementById('captcha-input').value);
         const msg = document.getElementById("msg");
         const btn = document.getElementById("btnLogin");
-        const captcha = grecaptcha.getResponse();
+        const captchaRecaptcha = grecaptcha.getResponse();
 
-        if (!email || !password || !captcha) { 
+        // VALIDACIÓN PREVIA
+        if (!email || !password) { 
             msg.style.color = "#ffcc00";
-            msg.textContent = "⚠ Email, Password y Captcha requeridos"; 
+            msg.textContent = "⚠ Email y Password requeridos"; 
             return; 
+        }
+        
+        if (mathVal !== _cc) {
+            msg.style.color = "red";
+            msg.textContent = "⚠ Resuelve la suma correctamente";
+            return;
+        }
+
+        if (!captchaRecaptcha) {
+            msg.style.color = "red";
+            msg.textContent = "⚠ Verifica el reCAPTCHA";
+            return;
         }
 
         btn.disabled = true;
         btn.textContent = "Cargando...";
 
         try {
-            // 1. Verificar Intentos (Fuerza Bruta)
+            // 1. Verificar Intentos (Fuerza Bruta - Práctica 1 Parte 8)
             const { data: attemptData } = await supabase
                 .from("login_attempts")
                 .select("*")
                 .eq("email", email)
                 .maybeSingle();
 
-            if (!profile) {
-            // Si lo eliminaste de profiles, no lo dejes pasar aunque la clave sea correcta
-            await supabase.auth.signOut(); 
-            alert("Tu cuenta ha sido desactivada por un administrador.");
-            return;
-        }
-
             if (attemptData?.blocked_until && new Date(attemptData.blocked_until) > new Date()) {
-                throw new Error("Bloqueado por seguridad. Intenta más tarde.");
+                throw new Error("Bloqueado por seguridad (10 min).");
             }
 
-            // 2. Auth Principal
+            // 2. Auth Principal de Supabase
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
             if (authError) {
+                // Registrar intento fallido
                 const attempts = (attemptData?.attempts || 0) + 1;
                 await supabase.from("login_attempts").upsert({
                     email,
@@ -142,7 +141,19 @@
                 throw authError;
             }
 
-            // 3. Preparar OTP
+            // 3. VERIFICAR PERFIL (Aquí estaba tu error anterior)
+            const { data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", authData.user.id)
+                .maybeSingle();
+
+            if (!profile) {
+                await supabase.auth.signOut(); 
+                throw new Error("Cuenta desactivada o sin perfil configurado.");
+            }
+
+            // 4. Preparar OTP (MFA - Requisito Obligatorio)
             currentUserId = authData.user.id;
             const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
             
@@ -152,12 +163,13 @@
                 expires_at: new Date(Date.now() + 5 * 60000).toISOString()
             });
 
-            alert("🔐 TU CÓDIGO DE ACCESO: " + otpCode);
+            // Simulamos el envío (En producción usarías un servicio de Email/SMS)
+            alert("🔐 CÓDIGO MFA PARA STAFF: " + otpCode);
             
             document.getElementById("login-fields").style.display = "none";
             document.getElementById("otp-section").style.display = "block";
             msg.style.color = "lightgreen";
-            msg.textContent = "Paso 1: OK. Ingresa el código OTP.";
+            msg.textContent = "Identidad validada. Ingresa tu código de 6 dígitos.";
 
         } catch (err) {
             msg.style.color = "red";
@@ -176,7 +188,7 @@
         try {
             btn.disabled = true;
             
-            // A. Validar OTP
+            // A. Validar OTP en base de datos
             const { data: mfaData } = await supabase
                 .from("mfa_codes")
                 .select("*")
@@ -185,26 +197,27 @@
                 .eq("used", false)
                 .maybeSingle();
 
-            if (!mfaData) throw new Error("Código inválido o expirado");
+            if (!mfaData) throw new Error("Código incorrecto o ya utilizado");
 
+            // Marcar código como usado
             await supabase.from("mfa_codes").update({ used: true }).eq("id", mfaData.id);
 
-            // B. Registro de Sesión (Cumplimiento de Práctica)
+            // B. Registro de Sesión (Para que el Superusuario la vea)
             await supabase.from("sessions").insert({
                 user_id: currentUserId,
                 user_agent: navigator.userAgent
             });
 
-            // C. Consultar Rol y Redirigir
+            // C. Obtener el rol final para redirección
             const { data: profile } = await supabase
                 .from("profiles")
                 .select("role")
                 .eq("id", currentUserId)
-                .maybeSingle();
+                .single();
 
             const role = profile?.role || 'mesero';
             msg.style.color = "lightgreen";
-            msg.textContent = "✅ Identidad confirmada. Entrando...";
+            msg.textContent = "✅ Acceso concedido.";
 
             setTimeout(() => {
                 const routes = { admin: 'dashboard.html', cocina: 'cocina.html', barra: 'barra.html' };
