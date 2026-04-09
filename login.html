@@ -35,6 +35,14 @@
             <div id="login-fields">
                 <input type="email" id="email" placeholder="Correo electrónico">
                 <input type="password" id="password" placeholder="Contraseña">
+                <div id="captcha-wrapper">
+                <label style="display:block; font-size:20px; margin-bottom:6px; ">
+                    Verificación: <span id="captcha-question">¿Cuánto es 8 + 16?</span>
+                </label>
+                <input type="number" id="captcha-input" placeholder="Tu respuesta"
+                        oninput="checkCaptcha()" autocomplete="off" />
+                <span id="captcha-feedback" style="font-size:13px; margin-left:8px;"></span>
+                </div>
                 <div class="g-recaptcha" data-sitekey="6LcyipksAAAAAPUuodqJ2enwXh89G50IuuJdvEpQ"></div>
                 <button id="btnLogin" onclick="handleLogin()">Entrar al Sistema</button>
             </div>
@@ -53,6 +61,31 @@
 </div>
 
 <script type="module">
+    // Cambia estos valores con cada carga de página (genera en el servidor o en JS)
+    var _ca = 8, _cb = 16, _cc = 24;
+
+    function checkCaptcha() {
+        var val = parseInt(document.getElementById('captcha-input').value);
+        var fb  = document.getElementById('captcha-feedback');
+        if (isNaN(val)) { fb.textContent = ''; return; }
+        if (val === _cc) {
+        fb.textContent = '✓ correcto';
+        fb.style.color = 'green';
+        } else {
+        fb.textContent = '✗ incorrecto';
+        fb.style.color = 'red';
+        }
+    }
+
+    // Llama esto antes de hacer submit
+    function validateCaptcha() {
+        var val = parseInt(document.getElementById('captcha-input').value);
+        if (val !== _cc) {
+        alert('Por favor resuelve la verificación correctamente.');
+        return false;
+        }
+        return true;
+    }
     const supabase = window.supabase.createClient(
         "https://bdngrgorvczujhkyzbkl.supabase.co",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
