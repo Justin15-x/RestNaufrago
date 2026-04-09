@@ -60,67 +60,67 @@
 </div>
 
 <script type="module">
-    // 1. Inicializar Supabase
     const supabase = window.supabase.createClient(
         "https://bdngrgorvczujhkyzbkl.supabase.co",
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmdyZ29ydmN6dWpoa3l6YmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzYxMzAsImV4cCI6MjA4NjUxMjEzMH0.yjvRSBZ33VkL0JYgUtHUDNYybA2GUFvMMOnyyYbYOUo"
     );
 
-    // 2. Proteger la ruta y cargar datos
-    async function middlewareAvanzado() {
-    const { data: { session } } = await supabase.auth.getSession();
+    // FUNCIÓN DE INICIO (Centraliza la seguridad)
+    async function init() {
+        const { data: { session } } = await supabase.auth.getSession();
 
-    // 1. ¿Hay sesión activa?
-    if (!session) window.location.href = "login.html";
-
-    // 2. ¿La sesión existe en nuestra tabla de monitoreo? (Parte 5 de la práctica)
-    const { data: activeSession } = await supabase
-        .from("sessions")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-
-    if (!activeSession) {
-        await supabase.auth.signOut();
-        alert("Tu sesión ha sido revocada por el administrador.");
-        window.location.href = "login.html";
-    }
-    
-    // 3. Registrar acceso en logs (Monitoreo)
-    await supabase.from("audit_logs").insert({
-        user_id: session.user.id,
-        action: "Acceso a página: " + window.location.pathname
-    });
-}
-
-        document.getElementById("userEmail").textContent = user.email;
-
-        // Verificar si es Admin en la tabla profiles
-        const { data: profile, error } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", user.id)
-            .maybeSingle();
-
-        if (!profile || profile.role !== 'admin') {
-            alert("Acceso denegado: Se requieren permisos de Superusuario.");
-            window.location.href = "login.html"; // O a su respectivo dashboard
+        // 1. Middleware Avanzado: Autenticación basada en Tokens
+        if (!session) {
+            window.location.href = "login.html";
             return;
         }
 
-        // Si es admin, mostrar panel y cargar listas
+        // 2. Monitoreo de sesión activa (Parte 5 de la práctica)
+        const { data: activeSession } = await supabase
+            .from("sessions")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+
+        if (!activeSession) {
+            await supabase.auth.signOut();
+            alert("Tu sesión ha sido revocada por seguridad.");
+            window.location.href = "login.html";
+            return;
+        }
+
+        // 3. Registro y Monitoreo (Audit Logs)
+        await supabase.from("audit_logs").insert({
+            user_id: session.user.id,
+            action: "Acceso a Dashboard Administrativo"
+        });
+
+        // 4. Autorización basada en Roles (RBAC)
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+        if (!profile || profile.role !== 'admin') {
+            alert("Acceso denegado: Se requiere rol de Administrador.");
+            window.location.href = "login.html";
+            return;
+        }
+
+        // Si todo es correcto, mostramos la interfaz
+        document.getElementById("userEmail").textContent = session.user.email;
         document.getElementById("adminPanel").style.display = "block";
         loadUsers();
         loadSessions();
     }
 
-    // 3. Cargar Tabla de Usuarios
+    // --- CARGA DE DATOS ---
     async function loadUsers() {
         const { data: users } = await supabase.from("profiles").select("*");
         const table = document.getElementById("usersTable");
         table.innerHTML = "";
-
-        users.forEach(u => {
+        users?.forEach(u => {
             table.innerHTML += `
                 <tr>
                     <td>${u.email}</td>
@@ -128,57 +128,37 @@
                     <td>
                         <button class="btn-role" onclick="updateRole('${u.id}', 'admin')">Admin</button>
                         <button class="btn-role" onclick="updateRole('${u.id}', 'mesero')">Mesero</button>
-                        <button class="btn-role" onclick="updateRole('${u.id}', 'cocina')">Cocina</button>
                         <button class="btn-delete" onclick="deleteUser('${u.id}')">Eliminar</button>
                     </td>
-                </tr>
-            `;
+                </tr>`;
         });
     }
 
-    // 4. Cargar Tabla de Sesiones (Monitoreo)
     async function loadSessions() {
-        // Hacemos un JOIN para traer el email del perfil junto a la sesión
         const { data: sessions } = await supabase
             .from("sessions")
-            .select(`id, user_agent, user_id, profiles(email)`);
-
+            .select(`id, user_agent, profiles(email)`);
+        
         const table = document.getElementById("sessionsTable");
         table.innerHTML = "";
-
-        if(sessions) {
-            sessions.forEach(s => {
-                table.innerHTML += `
-                    <tr>
-                        <td>${s.profiles?.email || 'Desconocido'}</td>
-                        <td style="font-size: 0.8em; color: #ccc;">${s.user_agent.substring(0, 50)}...</td>
-                        <td>
-                            <button class="btn-kick" onclick="closeSession('${s.id}')">Finalizar Sesión</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
+        sessions?.forEach(s => {
+            table.innerHTML += `
+                <tr>
+                    <td>${s.profiles?.email || 'Desconocido'}</td>
+                    <td style="font-size: 0.7em;">${s.user_agent}</td>
+                    <td><button class="btn-kick" onclick="closeSession('${s.id}')">Finalizar</button></td>
+                </tr>`;
+        });
     }
 
-    // --- FUNCIONES GLOBALES (Expuestas a window) ---
-
+    // --- FUNCIONES GLOBALES ---
     window.updateRole = async (id, newRole) => {
-        const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", id);
-        if (error) alert(error.message);
+        await supabase.from("profiles").update({ role: newRole }).eq("id", id);
         loadUsers();
-        loadSessions();
-    };
-
-    window.deleteUser = async (id) => {
-        if (confirm("¿Estás seguro de eliminar este usuario? Esto no se puede deshacer.")) {
-            await supabase.from("profiles").delete().eq("id", id);
-            loadUsers();
-        }
     };
 
     window.closeSession = async (sessionId) => {
-        if (confirm("¿Expulsar al usuario de esta sesión?")) {
+        if (confirm("¿Expulsar sesión?")) {
             await supabase.from("sessions").delete().eq("id", sessionId);
             loadSessions();
         }
@@ -189,9 +169,6 @@
         window.location.href = "login.html";
     };
 
-    // Ejecutar al cargar
-    init();
+    init(); // Ejecutar al cargar
 </script>
-
-</body>
 </html>
