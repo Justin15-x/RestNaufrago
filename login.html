@@ -85,6 +85,13 @@
                 .eq("email", email)
                 .maybeSingle();
 
+            if (!profile) {
+            // Si lo eliminaste de profiles, no lo dejes pasar aunque la clave sea correcta
+            await supabase.auth.signOut(); 
+            alert("Tu cuenta ha sido desactivada por un administrador.");
+            return;
+        }
+
             if (attemptData?.blocked_until && new Date(attemptData.blocked_until) > new Date()) {
                 throw new Error("Bloqueado por seguridad. Intenta más tarde.");
             }
